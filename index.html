@@ -1551,7 +1551,7 @@ canvas{display:block;width:100%;touch-action:none}
 &lt;div class=&quot;wrap&quot;&gt;
   &lt;header&gt;
     &lt;h1&gt;石門老梅迷宮・數感版&lt;/h1&gt;
-    &lt;p class=&quot;lede&quot;&gt;從外環步道的紅色起點出發，在長出樹幹、青苔和小蘑菇的紅磚牆之間找路，走到正中央的圓形小房間。小點、凜和三個外星夥伴 Numnum、Numi、Looppi 嚕嗶也在迷宮裡散步，走近一點，聽聽他們說什麼。牆的上半段一樣有鏤空花紋，「走進迷宮」時可以從縫裡偷看隔壁的走道。&lt;/p&gt;
+    &lt;p class=&quot;lede&quot;&gt;從外環步道的紅色起點出發，在長出樹幹、青苔和小蘑菇的紅磚牆之間找路，走到正中央的圓形小房間。小點、凜和三個外星夥伴 Numnum、Numi、πmi也在迷宮裡散步，走近一點，聽聽他們說什麼。牆的上半段一樣有鏤空花紋，「走進迷宮」時可以從縫裡偷看隔壁的走道。&lt;/p&gt;
   &lt;/header&gt;
 
   &lt;div class=&quot;bar&quot;&gt;
@@ -1596,7 +1596,7 @@ canvas{display:block;width:100%;touch-action:none}
     &lt;span&gt;&lt;svg viewBox=&quot;0 0 20 20&quot;&gt;&lt;rect x=&quot;2&quot; y=&quot;2&quot; width=&quot;16&quot; height=&quot;16&quot; rx=&quot;3&quot; fill=&quot;var(--soil)&quot;/&gt;&lt;/svg&gt;迷宮走道（泥土地）&lt;/span&gt;
     &lt;span&gt;&lt;svg viewBox=&quot;0 0 20 20&quot;&gt;&lt;rect x=&quot;2&quot; y=&quot;2&quot; width=&quot;16&quot; height=&quot;16&quot; rx=&quot;3&quot; fill=&quot;var(--walk)&quot; stroke=&quot;var(--line)&quot;/&gt;&lt;/svg&gt;外環步道&lt;/span&gt;
     &lt;span&gt;&lt;svg viewBox=&quot;0 0 20 20&quot;&gt;&lt;rect x=&quot;2&quot; y=&quot;2&quot; width=&quot;16&quot; height=&quot;16&quot; rx=&quot;3&quot; fill=&quot;var(--plaza)&quot; stroke=&quot;var(--line)&quot;/&gt;&lt;/svg&gt;廣場&lt;/span&gt;
-    &lt;span class=&quot;cast&quot;&gt;&lt;img id=&quot;lg-xiaodian&quot; alt=&quot;&quot;&gt;小點&lt;/span&gt;&lt;span class=&quot;cast&quot;&gt;&lt;img id=&quot;lg-lin&quot; alt=&quot;&quot;&gt;凜&lt;/span&gt;&lt;span class=&quot;cast&quot;&gt;&lt;img id=&quot;lg-numnum&quot; alt=&quot;&quot;&gt;Numnum&lt;/span&gt;&lt;span class=&quot;cast&quot;&gt;&lt;img id=&quot;lg-numi&quot; alt=&quot;&quot;&gt;Numi&lt;/span&gt;&lt;span class=&quot;cast&quot;&gt;&lt;img id=&quot;lg-looppi&quot; alt=&quot;&quot;&gt;Looppi 嚕嗶&lt;/span&gt;&lt;span class=&quot;castnote&quot;&gt;在迷宮裡散步的角色，不會擋路&lt;/span&gt;
+    &lt;span class=&quot;cast&quot;&gt;&lt;img id=&quot;lg-xiaodian&quot; alt=&quot;&quot;&gt;小點&lt;/span&gt;&lt;span class=&quot;cast&quot;&gt;&lt;img id=&quot;lg-lin&quot; alt=&quot;&quot;&gt;凜&lt;/span&gt;&lt;span class=&quot;cast&quot;&gt;&lt;img id=&quot;lg-numnum&quot; alt=&quot;&quot;&gt;Numnum&lt;/span&gt;&lt;span class=&quot;cast&quot;&gt;&lt;img id=&quot;lg-numi&quot; alt=&quot;&quot;&gt;Numi&lt;/span&gt;&lt;span class=&quot;cast&quot;&gt;&lt;img id=&quot;lg-looppi&quot; alt=&quot;&quot;&gt;πmi&lt;/span&gt;&lt;span class=&quot;castnote&quot;&gt;在迷宮裡散步的角色，不會擋路&lt;/span&gt;
   &lt;/div&gt;
 
   &lt;div class=&quot;notes&quot;&gt;
@@ -1716,7 +1716,7 @@ const SPR = {&quot;xiaodian&quot;:&quot;data:image/webp;base64,UklGRhopAABXRUJQV
   const KINDS = {
     xiaodian: {img:&#x27;xiaodian&#x27;, size:53, lift:0, speed:34, name:&#x27;小點&#x27;,        say:&#x27;哇，那是什麼呀？&#x27;,                  hop:&#x27;walk&#x27;,   icon:.6},
     lin:      {img:&#x27;lin&#x27;,      size:60, lift:0, speed:30, name:&#x27;凜&#x27;,          say:&#x27;這條路好像走過了？&#x27;,                hop:&#x27;walk&#x27;,   icon:.6},
-    looppi:   {img:&#x27;looppi&#x27;,   size:34, lift:0, speed:36, name:&#x27;Looppi 嚕嗶&#x27;, say:&#x27;不用緊張，請放心交給我&#x27;,            hop:&#x27;wiggle&#x27;, icon:.8},
+    looppi:   {img:&#x27;looppi&#x27;,   size:34, lift:0, speed:36, name:&#x27;πmi&#x27;, say:&#x27;不用緊張，請放心交給我&#x27;,            hop:&#x27;wiggle&#x27;, icon:.8},
     numnum:   {img:&#x27;numnum&#x27;,   size:19, lift:0, speed:26, name:&#x27;Numnum&#x27;,      say:&#x27;請等一下，這中間存有 0.01% 的誤差。&#x27;, hop:&#x27;hop&#x27;,    icon:1.15},
     numi:     {img:&#x27;numi&#x27;,     size:19, lift:0, speed:26, name:&#x27;Numi&#x27;,        say:&#x27;先做了再說！&#x27;,                      hop:&#x27;hop&#x27;,    icon:1.15},
   };
