@@ -1,0 +1,611 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>石門老梅迷宮</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<style>
+/* Layout: a maze-map board in the middle, controls and record strip above it, legend and notes below. */
+:root{
+  --bg:#f3f5ee; --sub:#878b7e; --line2:#ccd2c0; --brand:#2f8033; --brand-soft:rgba(58,154,57,.09); --brand-grid:rgba(47,128,51,.055); --paper:#fbfcf7; --ink:#1c1e19; --muted:#62675b; --line:#e0e3d6;
+  --lawn:#cfdfb8; --soil:#93745a; --walk:#e4ddcc; --plaza:#d6d0c5; --cap:#f1ebdf; --wall-edge:#5e4636;
+  --trail:#d2502f; --player:#c2361b; --sol:#d2502f;
+  --g-win:#efc22d; --g-pass:#e5873a; --g-start:#d23b3b; --g-edge:#3b3b3b;
+  --btn:#ffffff; --btn-on:#2f8033; --btn-on-ink:#ffffff;
+  --display:"PingFang TC","Noto Sans TC",system-ui,sans-serif;
+  --body:"PingFang TC","Noto Sans TC",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141814; --sub:#99a092; --line2:#3c443a; --brand:#7cc47f; --brand-soft:rgba(124,196,127,.07); --brand-grid:rgba(124,196,127,.05); --paper:#1b201b; --ink:#e7eae2; --muted:#aab1a3; --line:#2b312a;
+  --lawn:#2e3a26; --soil:#6b5442; --walk:#9c9483; --plaza:#7f7a71; --cap:#efe7da; --wall-edge:#1c140f;
+  --trail:#ff8a5c; --player:#ff7043; --sol:#ff8a5c;
+  --g-win:#f2cc3a; --g-pass:#f0974d; --g-start:#ef5a5a; --g-edge:#111111;
+  --btn:#1f251f; --btn-on:#7cc47f; --btn-on-ink:#10170f; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#141814; --sub:#99a092; --line2:#3c443a; --brand:#7cc47f; --brand-soft:rgba(124,196,127,.07); --brand-grid:rgba(124,196,127,.05); --paper:#1b201b; --ink:#e7eae2; --muted:#aab1a3; --line:#2b312a;
+  --lawn:#2e3a26; --soil:#6b5442; --walk:#9c9483; --plaza:#7f7a71; --cap:#efe7da; --wall-edge:#1c140f;
+  --trail:#ff8a5c; --player:#ff7043; --sol:#ff8a5c;
+  --g-win:#f2cc3a; --g-pass:#f0974d; --g-start:#ef5a5a; --g-edge:#111111;
+  --btn:#1f251f; --btn-on:#7cc47f; --btn-on-ink:#10170f; color-scheme:dark }
+html{font-size:17px}
+html,body{height:auto}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:1rem;line-height:1.65;overflow-x:hidden;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 44px}
+/* 數感方格紙：細格線＋兩團綠色的光（嵌在合輯頁裡時改用外框的背景） */
+body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(1000px 700px at 88% -8%,var(--brand-soft),transparent 62%),
+    radial-gradient(1200px 800px at -12% 108%,var(--brand-soft),transparent 58%),
+    repeating-linear-gradient(0deg,var(--brand-grid) 0 1px,transparent 1px 28px),
+    repeating-linear-gradient(90deg,var(--brand-grid) 0 1px,transparent 1px 28px)}
+html.embedded,html.embedded body{background:transparent}
+html.embedded body{padding-top:4px}
+html.embedded body::before{display:none}
+.wrap{position:relative;z-index:1;max-width:1400px;margin:0 auto;display:grid;gap:14px;min-width:0}
+header{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 24px;border-bottom:2.5px solid var(--brand);padding-bottom:12px}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(1.55rem,3vw,2.1rem);letter-spacing:.1em;line-height:1.25;margin:0}
+.lede{margin:0;color:var(--muted);font-size:.97rem;max-width:78ch;flex:1 1 32ch}
+html.embedded header{border-bottom:0;padding-bottom:0}
+html.embedded header h1{display:none}
+.bar{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;justify-content:space-between}
+.seg{display:inline-flex;border:1.5px solid var(--line2);border-radius:999px;overflow:hidden;background:var(--btn)}
+.seg button{border:0;background:transparent;color:var(--ink);font:600 .95rem/1.2 var(--body);letter-spacing:.05em;padding:10px 18px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--btn-on);color:var(--btn-on-ink)}
+.btns{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{border:1.5px solid var(--line2);background:var(--btn);color:var(--ink);font:600 .95rem/1.2 var(--body);letter-spacing:.05em;padding:10px 18px;border-radius:999px;cursor:pointer}
+.btn[aria-pressed="true"]{background:var(--btn-on);border-color:var(--btn-on);color:var(--btn-on-ink)}
+.btn:not([aria-pressed="true"]):hover,.seg button:not([aria-pressed="true"]):hover{background:color-mix(in srgb,var(--brand) 10%,var(--btn))}
+button:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+.hud{display:flex;flex-wrap:wrap;gap:6px 28px;font-variant-numeric:tabular-nums}
+.hud div{display:grid;line-height:1.2}
+.hud span{font-size:.78rem;color:var(--sub);letter-spacing:.08em}
+.hud b{font-family:var(--body);font-size:1.5rem;font-weight:700}
+.board{position:relative;background:var(--paper);border:1.5px solid var(--line2);border-radius:16px;overflow:hidden;box-shadow:0 12px 32px -20px rgba(28,60,28,.45)}
+canvas{display:block;width:100%;touch-action:none}
+#cv{cursor:crosshair}
+#mini{position:absolute;right:12px;top:12px;width:min(30%,280px);border-radius:12px;border:1.5px solid var(--line2);background:var(--paper);pointer-events:none}
+.hint{position:absolute;left:12px;bottom:12px;right:12px;pointer-events:none;display:flex;justify-content:center}
+.hint p{margin:0;background:color-mix(in srgb,var(--paper) 90%,transparent);border:1px solid var(--line2);border-radius:999px;padding:7px 16px;font-size:.88rem;color:var(--ink);text-align:center}
+.loading{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--display);font-size:1.35rem;font-weight:600;letter-spacing:.08em;color:var(--ink);background:var(--paper)}
+.modal{position:absolute;inset:0;display:grid;place-items:center;background:color-mix(in srgb,var(--bg) 55%,transparent);padding:16px}
+.card{background:var(--paper);border:1.5px solid var(--line2);border-top:4px solid var(--brand);border-radius:16px;padding:22px 24px;max-width:400px;display:grid;gap:10px;box-shadow:0 14px 34px rgba(0,0,0,.18)}
+.card h2{margin:0;font-family:var(--display);font-size:1.6rem;letter-spacing:.06em}
+.card p{margin:0;color:var(--muted)}
+.card .btns{justify-content:flex-end}
+.legend{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:.92rem}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.legend svg{width:20px;height:20px;flex:none}
+.notes{font-size:.82rem;color:var(--sub);max-width:84ch;display:grid;gap:4px;border-top:1px solid var(--line);padding-top:12px}
+.notes p{margin:0}
+@media (max-width:560px){ html{font-size:16px} .seg button,.btn{padding:9px 13px;font-size:.9rem} .hud{gap:4px 18px} .hud b{font-size:1.3rem} }
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<script>try{if(window.frameElement)document.documentElement.classList.add("embedded")}catch(e){}</script>
+
+<div class="wrap">
+  <header>
+    <h1>石門老梅迷宮</h1>
+    <p class="lede">從外環步道的紅色起點出發，在紅磚牆之間找路，走到正中央的圓形小房間。牆的上半段有鏤空花紋，「走進迷宮」時可以從花磚縫偷看隔壁的走道。</p>
+  </header>
+
+  <div class="bar">
+    <div class="hud" aria-live="polite">
+      <div><span>時間</span><b id="t">0:00</b></div>
+      <div><span>走了</span><b id="d">0 公尺</b></div>
+      <div><span>最佳紀錄</span><b id="best">—</b></div>
+    </div>
+    <div class="btns">
+      <div class="seg" role="group" aria-label="視角">
+        <button id="v-all" aria-pressed="true">俯瞰全景</button>
+        <button id="v-near" aria-pressed="false">俯瞰近看</button>
+        <button id="v-3d" aria-pressed="false">走進迷宮</button>
+      </div>
+      <button class="btn" id="minibtn" aria-pressed="false" hidden>小地圖</button>
+      <button class="btn" id="restart">重新開始</button>
+      <button class="btn" id="answer" aria-pressed="false">看解答</button>
+    </div>
+  </div>
+
+  <div class="board" id="board">
+    <canvas id="cv" aria-label="石門老梅迷宮俯瞰地圖，用方向鍵或拖曳移動"></canvas>
+    <canvas id="gl" aria-label="走在老梅迷宮紅磚牆之間的立體視角，上下鍵前進後退、左右鍵轉向" hidden></canvas>
+    <canvas id="mini" hidden></canvas>
+    <div class="loading" id="loading" hidden>正在砌磚牆⋯⋯</div>
+    <div class="hint" id="hint"><p id="hint-text">用方向鍵（或 WASD）走，手機在地圖上按住往想去的方向拖。</p></div>
+    <div class="modal" id="m-win" hidden>
+      <div class="card">
+        <h2>走到中心了！</h2>
+        <p id="win-text"></p>
+        <div class="btns"><button class="btn" id="w-again">再走一次</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <span><svg viewBox="0 0 20 20"><polygon points="2,4 18,4 10,18" fill="var(--g-start)"/></svg>起點</span>
+    <span><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="7.5" fill="var(--g-win)" stroke="var(--g-edge)" stroke-width="1.5"/></svg>中心（終點）</span>
+    <span><svg viewBox="0 0 20 20"><rect x="1" y="7" width="18" height="6" rx="3" fill="var(--cap)" stroke="var(--wall-edge)" stroke-width="1.5"/></svg>紅磚牆（俯瞰看到的是牆頂）</span>
+    <span><svg viewBox="0 0 20 20"><rect x="2" y="2" width="16" height="16" rx="3" fill="var(--soil)"/></svg>迷宮走道（泥土地）</span>
+    <span><svg viewBox="0 0 20 20"><rect x="2" y="2" width="16" height="16" rx="3" fill="var(--walk)" stroke="var(--line)"/></svg>外環步道</span>
+    <span><svg viewBox="0 0 20 20"><rect x="2" y="2" width="16" height="16" rx="3" fill="var(--plaza)" stroke="var(--line)"/></svg>廣場</span>
+  </div>
+
+  <div class="notes">
+    <p>牆位置依 2021 年空拍影片判讀重繪，長短粗細為約略值。</p>
+    <p>走了幾公尺是依比例換算的估計值（整座迷宮直徑約 21 公尺）。「走進迷宮」的牆高、視線高度與鏤空花紋是為了遊戲手感設定的示意。</p>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const D = {"walls":[[[778.0,108.0],[730.0,85.0],[675.0,68.0],[600.0,58.0],[528.0,54.0],[422.0,64.0]],[[422.0,64.0],[417.0,59.0],[409.0,59.0]],[[408.0,73.0],[413.0,77.0],[418.6,93.4]],[[353.4,88.6],[348.0,93.0],[320.5,103.9]],[[418.6,93.4],[421.0,110.0],[424.2,114.7]],[[572.0,97.0],[577.0,99.0],[607.0,99.0],[614.3,101.9]],[[478.7,103.0],[481.0,100.0],[513.6,97.4]],[[478.7,103.0],[460.6,105.4]],[[460.6,105.4],[424.2,114.7]],[[614.3,101.9],[607.0,133.0]],[[320.5,103.9],[322.0,111.0],[332.0,123.3]],[[707.6,126.4],[673.4,114.4]],[[652.0,154.0],[668.0,120.0],[673.4,114.4]],[[436.0,153.0],[427.0,118.0],[424.2,114.7]],[[718.4,129.6],[715.0,126.0],[707.6,126.4]],[[343.0,143.0],[332.0,123.3]],[[718.4,129.6],[711.0,132.0],[707.6,126.4]],[[781.7,158.6],[803.0,130.0]],[[718.4,129.6],[750.0,146.0],[778.0,155.0],[781.7,158.6]],[[363.3,134.7],[343.0,143.0]],[[540.0,142.3],[560.0,141.0],[567.0,144.0],[591.0,144.0]],[[304.4,163.4],[320.0,157.0],[343.0,143.0]],[[548.0,187.0],[545.0,184.0],[540.0,142.3]],[[436.0,153.0],[443.0,154.0],[478.0,146.0],[485.0,190.0]],[[375.0,179.0],[406.0,164.0],[432.0,157.0],[436.0,153.0]],[[725.6,182.4],[722.0,180.0],[712.0,180.0],[676.0,167.0],[652.0,154.0]],[[232.0,163.0],[226.0,163.0],[204.0,179.0],[168.0,216.0],[138.7,254.0]],[[723.5,238.9],[731.0,232.0],[781.7,158.6]],[[304.4,163.4],[265.0,191.3]],[[252.6,176.4],[248.0,172.0],[246.5,163.1]],[[252.6,176.4],[265.0,191.3]],[[244.6,283.6],[246.0,278.0],[255.0,267.0],[294.0,229.0],[326.0,205.0],[349.0,195.0],[375.0,179.0]],[[548.0,187.0],[593.0,188.0],[629.0,193.0],[634.4,197.4]],[[485.0,190.0],[453.4,197.4]],[[494.4,234.6],[488.0,194.0],[485.0,190.0]],[[673.4,212.4],[669.0,208.0],[640.0,197.0],[634.4,197.4]],[[453.4,197.4],[438.0,203.0],[432.0,209.0]],[[365.0,240.0],[397.0,220.0],[426.0,207.0]],[[723.5,238.9],[720.0,230.0],[687.0,215.0],[673.4,212.4]],[[673.4,212.4],[664.0,239.0],[655.0,252.0],[658.0,259.0],[655.0,265.0]],[[521.0,235.0],[527.0,232.0],[551.0,231.0],[565.4,233.4]],[[195.6,265.4],[199.0,261.0],[208.0,257.0],[216.0,239.0],[224.0,233.0]],[[565.4,233.4],[577.0,233.0],[582.0,237.0],[593.5,236.4]],[[509.0,235.3],[494.4,234.6]],[[509.0,235.3],[521.0,235.0]],[[420.3,259.0],[494.4,234.6]],[[669.0,312.3],[625.0,293.0],[607.0,291.0],[588.0,283.0],[593.5,236.4]],[[406.4,264.6],[416.0,264.0],[420.3,259.0]],[[319.0,358.0],[323.0,348.0],[356.0,306.0],[393.0,276.0],[403.0,271.0],[406.4,264.6]],[[289.0,306.0],[304.0,295.0],[318.0,274.0],[323.0,273.0]],[[529.0,285.0],[521.0,281.0],[501.7,287.0]],[[696.4,278.6],[691.0,283.0],[676.0,307.0],[669.0,312.3]],[[143.7,308.0],[135.0,307.0],[110.0,295.0],[69.4,282.6]],[[235.4,290.4],[240.0,285.0],[244.6,283.6]],[[449.6,307.4],[463.0,299.0],[501.7,287.0]],[[175.6,412.6],[181.0,389.0],[194.0,355.0],[215.0,317.0],[235.4,290.4]],[[449.6,307.4],[435.0,310.0],[430.0,314.0],[430.0,328.0]],[[143.7,308.0],[158.0,314.0],[163.0,313.0]],[[612.0,394.0],[622.0,384.0],[658.0,333.0],[669.0,312.3]],[[538.0,329.0],[543.0,326.0],[583.0,328.0],[587.6,330.4]],[[480.6,342.6],[464.0,349.0],[445.0,361.0],[439.0,367.0],[438.0,373.0]],[[483.6,401.6],[490.0,393.0],[500.0,387.0],[500.0,383.0],[480.6,342.6]],[[359.0,381.3],[371.0,374.0],[382.0,353.0],[387.0,348.0],[392.0,347.0]],[[96.4,350.6],[104.0,354.0],[134.0,357.0],[137.0,359.3]],[[254.0,358.0],[250.0,364.0],[249.0,375.0],[234.0,414.0],[227.6,422.4]],[[66.0,413.6],[75.0,373.0],[82.0,359.0]],[[359.0,381.3],[342.0,375.0],[319.0,358.0]],[[126.0,394.3],[137.0,359.3]],[[563.0,376.7],[595.0,385.0],[612.0,394.0]],[[586.6,432.4],[612.0,394.0]],[[175.6,412.6],[204.0,422.0],[227.6,422.4]],[[399.0,428.0],[401.0,417.0],[404.4,413.4]],[[162.5,493.0],[165.0,456.0],[171.6,417.4]],[[586.6,432.4],[560.5,422.0]],[[390.6,443.6],[322.0,429.0],[302.0,428.0],[286.4,421.6]],[[496.2,486.3],[498.0,471.0],[506.0,448.0],[521.0,436.0],[536.0,428.0],[560.5,422.0]],[[227.6,422.4],[228.0,448.0],[224.7,476.0]],[[399.0,428.0],[390.6,443.6]],[[600.5,493.5],[603.0,487.0],[601.0,461.0],[586.6,432.4]],[[356.0,539.0],[408.0,516.0],[448.0,502.0],[451.0,497.0],[448.0,489.0],[447.0,461.0],[442.0,454.0]],[[78.0,460.7],[87.0,464.0],[109.0,465.0],[116.0,459.0]],[[24.0,459.7],[58.0,460.0],[63.0,462.0],[78.0,460.7]],[[224.7,476.0],[223.7,495.0]],[[600.5,493.5],[596.0,488.0],[590.0,486.0]],[[492.0,502.0],[491.0,492.0],[496.2,486.3]],[[496.2,486.3],[500.0,492.0],[501.0,502.0],[512.3,521.0]],[[333.0,494.0],[321.0,497.0],[280.0,494.0],[276.0,498.0],[278.0,527.0],[285.6,560.6]],[[600.5,493.5],[604.0,497.0],[628.0,502.0],[653.0,511.0],[657.0,514.5]],[[598.0,504.7],[600.5,493.5]],[[111.0,545.0],[119.0,546.0],[165.0,539.0],[162.5,493.0]],[[233.4,585.6],[230.0,581.0],[224.0,548.0],[223.7,495.0]],[[657.0,514.5],[669.0,510.0]],[[626.7,560.0],[649.0,531.0],[657.0,514.5]],[[111.0,545.0],[107.7,515.0]],[[546.6,536.4],[543.0,534.0],[534.0,534.0],[520.0,523.0],[512.3,521.0]],[[514.0,537.0],[511.0,526.0],[512.3,521.0]],[[49.3,527.7],[55.3,578.0]],[[341.0,544.3],[356.0,539.0]],[[341.0,544.3],[349.0,570.0],[359.0,590.0],[394.0,634.0]],[[475.6,556.6],[505.0,573.0],[507.0,572.0]],[[603.0,574.0],[626.7,560.0]],[[233.4,585.6],[243.0,584.0],[275.0,564.0],[285.6,560.6]],[[626.7,560.0],[629.0,567.0],[624.0,579.0]],[[572.0,577.7],[603.0,574.0]],[[525.3,752.0],[580.0,751.0],[626.0,745.0],[661.0,734.0],[702.0,715.0],[734.0,692.0],[773.0,653.0],[795.0,621.0],[812.0,586.0],[814.0,575.0],[819.6,574.4]],[[603.0,574.0],[600.0,584.0]],[[421.0,578.0],[429.0,581.0],[447.0,601.0],[484.0,624.0],[506.0,632.3]],[[567.0,587.7],[568.0,580.0],[572.0,577.7]],[[55.3,578.0],[61.9,628.0]],[[567.0,587.7],[570.0,590.0],[571.0,617.0],[576.0,646.0]],[[839.0,664.7],[841.0,656.0],[867.0,606.0],[868.0,598.0],[864.0,594.0]],[[623.0,635.0],[625.0,627.0],[634.0,618.0],[667.6,599.6]],[[667.6,599.6],[677.0,608.0],[708.0,625.0],[712.0,630.0],[712.0,634.0],[701.0,646.0],[674.0,667.0],[674.0,672.0]],[[103.0,611.0],[120.0,602.7]],[[103.0,611.0],[84.0,621.3]],[[196.0,643.0],[188.0,635.0],[180.7,612.0]],[[314.6,619.6],[310.0,621.0],[270.0,655.0],[255.0,672.0],[194.4,725.4]],[[84.0,621.3],[61.9,628.0]],[[341.3,657.0],[322.0,633.0],[314.6,619.6]],[[508.0,647.0],[505.0,644.0],[506.0,632.3]],[[1019.0,646.0],[1035.0,651.0]],[[1038.0,653.0],[1080.0,669.0]],[[351.0,664.0],[347.0,659.0],[341.3,657.0]],[[345.0,671.0],[341.0,668.0],[341.3,657.0]],[[137.0,661.0],[133.0,661.0],[89.0,684.0],[81.0,683.0]],[[180.0,739.3],[158.0,707.0],[137.0,661.0]],[[891.4,693.6],[889.0,689.0],[871.0,678.0],[862.0,676.0],[839.0,664.7]],[[417.0,695.0],[425.0,692.0],[437.0,677.0],[447.0,669.7]],[[447.0,669.7],[451.0,673.0],[508.8,688.7]],[[572.0,695.7],[608.0,693.0],[619.0,690.0]],[[417.0,695.0],[413.0,704.0],[407.4,708.4]],[[572.0,695.7],[562.0,704.3]],[[905.4,702.6],[902.0,697.0],[897.0,696.3]],[[905.4,702.6],[899.0,704.0],[897.0,696.3]],[[953.0,700.0],[944.0,706.0],[939.7,717.8]],[[980.0,701.0],[996.0,709.0],[1003.0,709.0],[1005.4,712.6]],[[921.0,712.3],[905.4,702.6]],[[370.6,756.4],[378.0,744.0],[404.0,716.0],[407.4,708.4]],[[939.7,717.8],[933.0,714.0],[921.0,712.3]],[[845.9,748.0],[843.0,741.0],[802.0,714.0],[796.0,713.0],[787.0,723.0],[741.0,761.0],[715.0,772.0],[679.6,791.4]],[[1005.4,712.6],[1010.0,718.0],[1002.6,732.6]],[[370.6,756.4],[362.0,753.0],[339.0,736.0],[313.4,713.4]],[[194.0,730.7],[180.0,739.3]],[[1002.6,732.6],[996.0,738.0],[972.0,779.0],[948.0,813.0],[911.0,853.0],[904.0,864.0]],[[461.0,778.0],[468.0,737.0]],[[108.7,741.0],[139.0,789.0],[168.0,828.0],[202.0,862.0],[223.0,878.3]],[[891.3,786.0],[849.0,748.0],[845.9,748.0]],[[845.9,748.0],[801.0,790.0],[767.0,814.0],[764.0,822.0]],[[530.4,810.6],[524.0,764.0],[525.3,752.0]],[[925.0,755.0],[908.0,764.0]],[[275.0,761.0],[265.0,758.0],[261.6,761.6]],[[456.6,798.4],[407.0,780.0],[374.0,762.0],[370.6,756.4]],[[224.6,792.4],[261.6,761.6]],[[891.3,786.0],[896.0,783.0],[908.0,764.0]],[[459.3,793.0],[461.0,778.0]],[[638.0,809.0],[640.0,804.0],[646.0,800.0],[679.6,791.4]],[[679.6,791.4],[723.4,902.6]],[[265.0,827.0],[252.0,822.0],[227.0,799.0],[224.6,792.4]],[[521.4,814.4],[476.0,802.0]],[[326.0,807.0],[333.0,806.0],[375.0,833.0],[413.0,850.0],[466.0,865.0],[513.6,869.6]],[[578.0,812.0],[534.0,813.0],[530.4,810.6]],[[521.4,814.4],[513.6,869.6]],[[885.0,859.7],[881.0,852.0],[861.0,832.0],[857.0,830.7]],[[723.4,902.6],[731.0,902.0],[771.0,884.0],[791.0,871.0],[796.0,864.0],[807.7,860.0]],[[885.0,859.7],[894.0,868.0]],[[376.0,966.0],[404.0,910.0],[400.0,906.0],[386.0,903.0],[358.0,891.0],[303.0,860.7]],[[649.7,862.0],[622.0,868.0],[572.0,871.8]],[[874.0,954.0],[866.0,952.0],[834.0,904.0],[833.0,898.0],[807.7,860.0]],[[894.0,868.0],[904.0,864.0]],[[678.0,983.0],[649.6,867.6]],[[510.7,926.0],[515.0,874.0],[513.6,869.6]],[[238.0,880.0],[228.0,875.0],[223.0,878.3]],[[575.0,936.7],[571.0,936.0],[572.0,871.8]],[[376.0,966.0],[338.0,953.0],[297.0,932.0],[228.0,885.0],[223.0,878.3]],[[472.4,929.4],[507.0,934.0],[510.6,932.6]],[[609.0,936.0],[575.0,936.7]],[[777.0,947.0],[771.0,952.0],[737.0,967.0],[699.0,979.0],[678.0,983.0]],[[442.4,984.6],[477.0,993.0],[511.0,997.0],[579.0,999.0],[599.0,996.0],[599.0,999.0]],[[598.0,492.0],[660.0,514.0],[818.0,576.0]],[[803.0,130.0],[842.0,88.0]],[[247.0,98.0],[274.0,168.0]],[[409.0,59.0],[408.0,73.0]],[[232.0,163.0],[246.0,163.0]],[[696.0,278.0],[723.0,238.0]],[[82.0,359.0],[96.0,350.0]],[[818.0,576.0],[864.0,594.0]],[[456.0,798.0],[476.0,802.0]],[[246.5,163.1],[246.0,163.0]],[[432.0,209.0],[426.0,207.0]],[[426.0,207.0],[432.0,209.0]],[[696.4,278.6],[696.0,278.0]],[[96.4,350.6],[96.0,350.0]],[[171.6,417.4],[175.6,412.6]],[[590.0,486.0],[598.0,492.0]],[[492.0,502.0],[500.9,501.1]],[[598.0,504.7],[604.0,497.0]],[[669.0,510.0],[666.4,516.5]],[[819.6,574.4],[818.8,576.3]],[[600.0,584.0],[598.9,574.5]],[[194.4,725.4],[194.0,730.7]],[[1035.0,651.0],[1038.0,653.0]],[[1038.0,653.0],[1035.0,651.0]],[[351.0,664.0],[345.0,671.0]],[[345.0,671.0],[351.0,664.0]],[[891.4,693.6],[897.0,696.3]],[[194.0,730.7],[194.4,725.4]],[[459.3,793.0],[458.2,798.4]],[[649.7,862.0],[649.6,867.6]],[[649.6,867.6],[648.4,862.3]],[[510.7,926.0],[510.6,932.6]],[[238.0,880.0],[232.5,888.1]],[[510.6,932.6],[510.7,926.0]],[[598.0,492.0],[598.8,491.4]],[[246.0,163.0],[246.5,163.1]],[[696.0,278.0],[696.4,278.6]],[[96.0,350.0],[96.4,350.6]]],"ellipse":{"center":[546.24,523.79],"axes":[942.33,999.54],"angleDeg":106.957},"plaza":[[600.0,446.0],[842.0,88.0],[812.1,132.0],[821.0,137.8],[829.8,143.7],[838.4,149.8],[847.0,156.1],[855.3,162.6],[863.6,169.2],[871.7,175.9],[879.6,182.9],[887.4,190.0],[895.0,197.2],[902.5,204.6],[909.8,212.1],[917.0,219.8],[924.0,227.6],[930.8,235.5],[937.4,243.6],[943.9,251.8],[950.1,260.2],[956.2,268.6],[962.1,277.2],[967.9,285.8],[973.4,294.6],[978.7,303.5],[983.9,312.5],[988.8,321.6],[993.5,330.8],[998.1,340.0],[1002.4,349.4],[1006.5,358.8],[1010.4,368.3],[1014.1,377.9],[1017.6,387.5],[1020.9,397.2],[1024.0,407.0],[1026.8,416.8],[1029.4,426.6],[1031.8,436.5],[1034.0,446.5],[1036.0,456.4],[1037.7,466.5],[1039.2,476.5],[1040.5,486.5],[1041.6,496.6],[1042.5,506.7],[1043.1,516.8],[1043.5,526.9],[1043.6,537.0],[1043.6,547.1],[1043.3,557.1],[1042.8,567.2],[1042.0,577.3],[1041.1,587.3],[1039.9,597.3],[1038.5,607.2],[1036.8,617.1],[1035.0,627.0],[1032.9,636.8],[1030.6,646.6],[1028.1,656.3],[1080.0,669.0],[1019.0,646.0],[864.0,594.0],[818.0,576.0],[600.0,493.0]],"centerGoal":[560,512],"solution":[[101.0,723.7],[120.0,722.6],[128.0,725.0],[135.0,730.6],[159.0,755.3],[167.0,760.4],[173.0,761.4],[205.0,761.2],[211.0,759.3],[216.0,756.0],[240.0,732.8],[248.0,726.4],[265.0,715.8],[282.0,698.6],[289.0,693.4],[297.0,691.6],[363.0,693.4],[369.0,692.4],[377.0,687.3],[394.0,670.4],[408.0,662.0],[420.0,651.4],[426.0,648.3],[431.0,647.6],[469.0,648.6],[476.0,651.2],[489.0,660.2],[495.0,663.2],[507.0,664.5],[516.0,663.0],[522.0,659.2],[528.4,653.3],[533.4,647.0],[536.0,641.0],[535.7,586.0],[537.2,579.0],[542.7,571.0],[562.2,552.0],[566.7,544.0],[567.4,539.0],[567.0,522.0],[564.9,517.0],[560.0,512.0]],"mPerPx":0.0215};
+(() => {
+  const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+  const gl = document.getElementById('gl'), mini = document.getElementById('mini'), mctx = mini.getContext('2d');
+  const $ = id => document.getElementById(id);
+
+  // ---------- ellipse (OpenCV RotatedRect: full axes, angle in degrees, image coords) ----------
+  const E = D.ellipse, ECX = E.center[0], ECY = E.center[1], EA = E.axes[0]/2, EB = E.axes[1]/2, ET = E.angleDeg*Math.PI/180, CT = Math.cos(ET), SN = Math.sin(ET);
+  const RING = 1.10;
+  const ePt = (t, k) => { const u = EA*k*Math.cos(t), v = EB*k*Math.sin(t); return [ECX + u*CT - v*SN, ECY + u*SN + v*CT]; };
+  const eR = (x, y) => { const dx = x-ECX, dy = y-ECY, u = dx*CT + dy*SN, v = -dx*SN + dy*CT; return Math.hypot(u/EA, v/EB); };
+  const ellPath = (c, k) => { c.beginPath(); c.ellipse(ECX, ECY, EA*k, EB*k, ET, 0, Math.PI*2); c.closePath(); };
+
+  // ---------- world bounds ----------
+  const ring = []; for (let i=0;i<360;i++) ring.push(ePt(i*Math.PI/180, RING));
+  const minX = Math.floor(Math.min(...ring.map(p=>p[0]))) - 30, maxX = Math.ceil(Math.max(...ring.map(p=>p[0]))) + 30;
+  const minY = Math.floor(Math.min(...ring.map(p=>p[1]))) - 30, maxY = Math.ceil(Math.max(...ring.map(p=>p[1]))) + 30;
+  const WW = maxX - minX, WH = maxY - minY;
+  const WALL_T = 9, BODY_R = 8, GOAL_R = 35;
+
+  // ---------- walkable mask: inside ellipse x1.10 (walkway + maze floor + plaza) minus walls ----------
+  const poly = (c, pts) => { c.beginPath(); pts.forEach((p,i)=> i ? c.lineTo(p[0],p[1]) : c.moveTo(p[0],p[1])); };
+  function drawWalls(c, w){ c.lineWidth = w; c.lineCap = 'round'; c.lineJoin = 'round'; D.walls.forEach(p => { poly(c,p); c.stroke(); }); }
+  const mc = document.createElement('canvas'); mc.width = WW; mc.height = WH;
+  const mx = mc.getContext('2d'); mx.translate(-minX, -minY); mx.strokeStyle = mx.fillStyle = '#000';
+  ellPath(mx, RING); mx.fill();
+  mx.globalCompositeOperation = 'destination-out'; drawWalls(mx, WALL_T);
+  const alpha = mx.getImageData(0,0,WW,WH).data;
+  const freePt = (x,y) => { const ix = (x-minX)|0, iy = (y-minY)|0; return ix>=0 && iy>=0 && ix<WW && iy<WH && alpha[(iy*WW+ix)*4+3] > 100; };
+  const DIRS = [0,1,2,3,4,5,6,7].map(k => [Math.cos(k*Math.PI/4)*BODY_R, Math.sin(k*Math.PI/4)*BODY_R]);
+  const free = (x,y) => freePt(x,y) && DIRS.every(([dx,dy]) => freePt(x+dx, y+dy));
+  const clearLine = (ax,ay,bx,by) => { const n = Math.ceil(Math.hypot(bx-ax, by-ay)); for (let i=0;i<=n;i++){ const t = i/(n||1); if (!freePt(ax+(bx-ax)*t, ay+(by-ay)*t)) return false; } return true; };
+
+  // ---------- start / goal ----------
+  const S0 = D.solution[0], GOAL = D.centerGoal;
+  // start in the middle of the outer walkway, straight outwards from the first solution point
+  let START = S0;
+  { const k = 1.05/eR(S0[0], S0[1]), p = [ECX + (S0[0]-ECX)*k, ECY + (S0[1]-ECY)*k]; if (free(p[0], p[1])) START = p; }
+  const SOL = (START === S0 ? [] : [START]).concat(D.solution);
+  let START_H = 0;
+  { const q = SOL.find(p => Math.hypot(p[0]-START[0], p[1]-START[1]) > 50) || GOAL; START_H = Math.atan2(q[1]-START[1], q[0]-START[0]); }
+
+  // ---------- state ----------
+  let st, best = null;
+  try { const b = localStorage.getItem('laomei-best'); if (b) best = JSON.parse(b); } catch(e) {}
+  function reset(){
+    st = { x:START[0], y:START[1], h:START_H, dist:0, t0:null, t:0, trail:[[START[0],START[1]]], done:false };
+    $('m-win').hidden = true; $('hint').hidden = false; keys.clear(); drag = null;
+    hud();
+  }
+  const fmt = s => `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
+  function hud(){
+    $('t').textContent = fmt(st.t);
+    $('d').textContent = `${Math.round(st.dist*D.mPerPx)} 公尺`;
+    $('best').textContent = best ? `${fmt(best.t)}・${best.m} 公尺` : '—';
+  }
+
+  // ---------- view ----------
+  let view = 'all', showAns = false, showMini = false;
+  const HINTS = {
+    all: '用方向鍵（或 WASD）走，手機在地圖上按住往想去的方向拖。',
+    near: '用方向鍵（或 WASD）走，手機在地圖上按住往想去的方向拖。',
+    '3d': '↑↓ 前進後退、←→ 轉身。手機按住畫面：往上拖前進，往左右拖轉身。'
+  };
+  function setView(v){
+    view = v; ['all','near','3d'].forEach(k => $('v-'+k).setAttribute('aria-pressed', String(k===v)));
+    cv.hidden = v === '3d'; gl.hidden = v !== '3d'; mini.hidden = !(v === '3d' && showMini); $('minibtn').hidden = v !== '3d';
+    $('hint-text').textContent = HINTS[v];
+    if (v === '3d' && !three) { $('loading').hidden = false; setTimeout(() => { build3D(); $('loading').hidden = true; size(); }, 30); }
+    size();
+  }
+  ['all','near','3d'].forEach(k => $('v-'+k).addEventListener('click', () => setView(k)));
+  $('minibtn').addEventListener('click', () => { showMini = !showMini; $('minibtn').setAttribute('aria-pressed', String(showMini)); mini.hidden = !showMini; });
+  $('answer').addEventListener('click', () => { showAns = !showAns; $('answer').setAttribute('aria-pressed', String(showAns)); $('answer').textContent = showAns ? '藏起解答' : '看解答'; if (three) three.sol.visible = showAns; });
+  $('restart').addEventListener('click', reset);
+  $('w-again').addEventListener('click', reset);
+
+  let dpr = 1, cw = 0, chh = 0;
+  function viewH(){ try { if (window.frameElement && window.parent.innerHeight) return window.parent.innerHeight; } catch(e) {} return window.innerHeight; }
+  function size(){
+    dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+    cw = $('board').clientWidth;
+    // board fills the viewport (the top window's, when embedded) minus the control bar
+    const bar = document.querySelector('.bar'), avail = Math.max(320, viewH() - (bar ? bar.offsetHeight : 60) - 44);
+    if (view === 'all') chh = Math.min(cw * WH / WW, avail);
+    else if (view === '3d') chh = cw < 560 ? Math.min(cw * 1.25, avail) : Math.min(cw * 0.7, avail);
+    else chh = Math.min(cw * (cw < 560 ? 1.15 : 0.9), avail);
+    const target = view === '3d' ? gl : cv;
+    target.style.height = chh + 'px';
+    if (view === '3d'){ if (three){ three.renderer.setPixelRatio(Math.min(dpr, 2)); three.renderer.setSize(cw, chh, false); three.camera.aspect = cw/chh; three.camera.updateProjectionMatrix(); } }
+    else { cv.width = Math.round(cw*dpr); cv.height = Math.round(chh*dpr); }
+    const mw = Math.min(cw*0.3, 280); mini.width = Math.round(mw*dpr); mini.height = Math.round(mw*WH/WW*dpr);
+  }
+  addEventListener('resize', size);
+  try { if (window.frameElement) window.parent.addEventListener('resize', size); } catch(e) {}
+
+  // ---------- colours from tokens ----------
+  let C = {};
+  function readColors(){
+    const cs = getComputedStyle(document.documentElement);
+    ['bg','paper','ink','muted','lawn','soil','walk','plaza','cap','wall-edge','trail','player','sol','g-win','g-start','g-edge']
+      .forEach(k => C[k] = cs.getPropertyValue('--'+k).trim());
+  }
+  readColors();
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readColors);
+  new MutationObserver(readColors).observe(document.documentElement, {attributes:true, attributeFilter:['data-theme']});
+
+  // ---------- input ----------
+  const keys = new Set();
+  const KMAP = {ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0],w:[0,-1],s:[0,1],a:[-1,0],d:[1,0],W:[0,-1],S:[0,1],A:[-1,0],D:[1,0]};
+  addEventListener('keydown', e => { if (KMAP[e.key] && st && !st.done) { keys.add(e.key); e.preventDefault(); } });
+  addEventListener('keyup', e => keys.delete(e.key));
+  addEventListener('blur', () => keys.clear());
+  let drag = null;
+  for (const el of [cv, gl]){
+    el.addEventListener('pointerdown', e => { el.setPointerCapture(e.pointerId); const r = el.getBoundingClientRect(); drag = {ox:e.clientX-r.left, oy:e.clientY-r.top, dx:0, dy:0}; });
+    el.addEventListener('pointermove', e => { if (!drag) return; const r = el.getBoundingClientRect(); drag.dx = e.clientX-r.left-drag.ox; drag.dy = e.clientY-r.top-drag.oy; });
+    el.addEventListener('pointerup', () => drag = null); el.addEventListener('pointercancel', () => drag = null);
+  }
+  function keyVec(){ let x = 0, y = 0; keys.forEach(k => { x += KMAP[k][0]; y += KMAP[k][1]; }); return [x,y]; }
+
+  // ---------- movement (units = image px; about 46 px per metre) ----------
+  const SPEED = 120, SPEED_3D = 80, TURN = 2.1;
+  const TURNS = [0, 20, -20, 40, -40, 60, -60, 80, -80].map(a => a*Math.PI/180);
+  function step(dir, dist){
+    let left = dist;
+    while (left > 0){
+      const s = Math.min(1.2, left); left -= s;
+      let moved = false;
+      for (const a of TURNS){
+        const c = Math.cos(a), sn = Math.sin(a);
+        const vx = dir[0]*c - dir[1]*sn, vy = dir[0]*sn + dir[1]*c;
+        const nx = st.x + vx*s*c, ny = st.y + vy*s*c;
+        if (free(nx,ny)) { st.dist += Math.hypot(nx-st.x, ny-st.y); st.x = nx; st.y = ny; moved = true; break; }
+      }
+      if (!moved) break;
+    }
+    const last = st.trail[st.trail.length-1];
+    if (Math.hypot(st.x-last[0], st.y-last[1]) > 4) st.trail.push([st.x, st.y]);
+  }
+  function update(dt){
+    let moving = false;
+    if (view === '3d'){
+      const [kx, ky] = keyVec(); let turn = kx, fwd = -ky;
+      if (drag){ if (Math.abs(drag.dx) > 10) turn = Math.max(-1, Math.min(1, drag.dx/70)); if (Math.abs(drag.dy) > 10) fwd = Math.max(-1, Math.min(1, -drag.dy/70)); }
+      st.h += turn * TURN * dt;
+      if (fwd){ moving = true; step([Math.cos(st.h)*Math.sign(fwd), Math.sin(st.h)*Math.sign(fwd)], SPEED_3D*Math.abs(fwd)*dt); }
+    } else {
+      let [x, y] = keyVec();
+      if (drag){ const l = Math.hypot(drag.dx, drag.dy); if (l > 10) { x = drag.dx/l; y = drag.dy/l; } }
+      const l = Math.hypot(x,y);
+      if (l){ moving = true; const d = [x/l, y/l]; st.h = Math.atan2(d[1], d[0]); step(d, SPEED*dt); }
+    }
+    return moving;
+  }
+  // win only when the centre point is in sight (no wall in between), so standing behind the room wall does not count
+  function checkGoal(){
+    if (Math.hypot(st.x-GOAL[0], st.y-GOAL[1]) < GOAL_R && clearLine(st.x, st.y, GOAL[0], GOAL[1])) win();
+  }
+  function win(){
+    st.done = true; keys.clear(); drag = null;
+    const m = Math.round(st.dist*D.mPerPx);
+    $('win-text').textContent = `花了 ${fmt(st.t)}，走了大約 ${m} 公尺。`;
+    $('m-win').hidden = false;
+    if (!best || st.t < best.t) { best = {t:Math.round(st.t), m}; try { localStorage.setItem('laomei-best', JSON.stringify(best)); } catch(e) {} }
+    hud();
+  }
+
+  // ---------- 2D drawing ----------
+  const plazaC = D.plaza.reduce((a,p) => [a[0]+p[0]/D.plaza.length, a[1]+p[1]/D.plaza.length], [0,0]);
+  function fillPoly(c, pts, fill){ poly(c,pts); c.closePath(); c.fillStyle = fill; c.fill(); }
+  function drawMap(c, W, H, cam, opts){
+    c.setTransform(opts.dpr,0,0,opts.dpr,0,0);
+    c.fillStyle = C.lawn; c.fillRect(0,0,W,H);
+    c.setTransform(opts.dpr*cam.s,0,0,opts.dpr*cam.s,opts.dpr*cam.ox,opts.dpr*cam.oy);
+    ellPath(c, RING); c.fillStyle = C.walk; c.fill();
+    ellPath(c, 1); c.fillStyle = C.soil; c.fill();
+    c.save(); ellPath(c, RING); c.clip(); fillPoly(c, D.plaza, C.plaza); c.restore();
+    if (!opts.mini){
+      c.fillStyle = C.muted; c.globalAlpha = .75; c.font = `500 44px ${getComputedStyle(document.body).fontFamily}`; c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText('廣場', plazaC[0] + 40, plazaC[1] + 20); c.globalAlpha = 1;
+    }
+    if (showAns){ c.strokeStyle = C.sol; c.globalAlpha = .6; c.lineWidth = opts.mini ? 10 : 6; c.lineCap = 'round'; c.lineJoin = 'round'; poly(c, SOL); c.stroke(); c.globalAlpha = 1; }
+    c.strokeStyle = C['wall-edge']; drawWalls(c, WALL_T + 3);
+    c.strokeStyle = C.cap; drawWalls(c, WALL_T - 2.5);
+    if (st.trail.length > 1){ c.strokeStyle = C.trail; c.lineWidth = opts.mini ? 6 : 3.5; c.globalAlpha = .8; c.lineCap = 'round'; c.lineJoin = 'round'; poly(c, st.trail.concat([[st.x,st.y]])); c.stroke(); c.globalAlpha = 1; }
+    // goal and start markers
+    const gr = opts.mini ? 22 : 13;
+    c.beginPath(); c.arc(GOAL[0], GOAL[1], gr, 0, 7); c.fillStyle = C['g-win']; c.fill(); c.lineWidth = 2.2; c.strokeStyle = C['g-edge']; c.stroke();
+    const r = opts.mini ? 22 : 14, [sx, sy] = START;
+    c.beginPath(); c.moveTo(sx-r*.95, sy-r*.75); c.lineTo(sx+r*.95, sy-r*.75); c.lineTo(sx, sy+r); c.closePath(); c.fillStyle = C['g-start']; c.globalAlpha = .85; c.fill(); c.globalAlpha = 1;
+    const pr = opts.mini ? 26 : (view === 'all' ? Math.max(9, 5/cam.s) : 8);
+    if (opts.mini){
+      c.save(); c.translate(st.x, st.y); c.rotate(st.h); c.beginPath(); c.moveTo(pr*1.4,0); c.lineTo(-pr*.8,pr*.8); c.lineTo(-pr*.8,-pr*.8); c.closePath(); c.fillStyle = C.player; c.fill(); c.restore();
+    } else {
+      c.beginPath(); c.arc(st.x, st.y, pr, 0, 7); c.fillStyle = C.player; c.fill();
+      c.lineWidth = Math.max(2, 1.5/cam.s); c.strokeStyle = C.paper; c.stroke();
+    }
+  }
+  function draw2D(){
+    let cam;
+    if (view === 'all'){ const s = Math.min(cw/WW, chh/WH); cam = {s, ox:(cw - WW*s)/2 - minX*s, oy:(chh - WH*s)/2 - minY*s}; }
+    else { const s = (cw/WW) * (cw < 700 ? 4.2 : 2.6); cam = {s, ox: cw/2 - st.x*s, oy: chh/2 - st.y*s}; }
+    drawMap(ctx, cw, chh, cam, {dpr});
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    drawJoy(ctx);
+  }
+  function drawJoy(c){
+    if (!drag) return;
+    c.strokeStyle = view === '3d' ? '#ffffff' : C.ink; c.fillStyle = c.strokeStyle; c.globalAlpha = .45; c.lineWidth = 2;
+    c.beginPath(); c.arc(drag.ox,drag.oy,28,0,7); c.stroke();
+    const l = Math.hypot(drag.dx,drag.dy), k = l > 28 ? 28/l : 1; c.beginPath(); c.arc(drag.ox+drag.dx*k, drag.oy+drag.dy*k, 10, 0, 7); c.fill(); c.globalAlpha = 1;
+  }
+
+  // ---------- 3D ----------
+  let three = null;
+  // ~46 px per metre: wall 1.35 m, cap 7 cm, child eye 1.08 m (inside the lattice band, below the top)
+  const WALL_H = 62, CAP_H = 3.2, CAP_W = WALL_T + 3, EYE = 50, POST_W = 11, POST_H = WALL_H + 5;
+  const BAND_LO = 0.56, BAND_HI = 0.9;         // pierced lattice band, as a share of wall height
+  const BTEX_U = 31;                            // world px per horizontal brick-texture repeat
+  const mkRnd = s => () => (s = (s*16807) % 2147483647) / 2147483647;
+  // brick side texture: canvas top = wall top (v = 1). Lattice band has real transparent holes for alphaTest.
+  function brickTexture(){
+    const W = 512, H = 1024, c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d'), rnd = mkRnd(31);
+    const NC = 25, CH = H/NC, BL = 128, M = 6;   // courses, course height, brick length, mortar
+    const bandTop = Math.round((1-BAND_HI)*NC), bandBot = Math.round((1-BAND_LO)*NC); // course indices [bandTop, bandBot)
+    x.fillStyle = '#b7aa98'; x.fillRect(0,0,W,H);
+    const brick = (bx, by, bw, bh) => {
+      const hue = 8 + rnd()*12, sat = 42 + rnd()*20, lig = 30 + rnd()*14;
+      x.fillStyle = `hsl(${hue},${sat}%,${lig}%)`;
+      for (const o of [-W, 0, W]){ x.fillRect(bx+o, by, bw, bh); }
+      for (let k=0;k<26;k++){ const px = bx + rnd()*bw, py = by + rnd()*bh; x.fillStyle = rnd() < .5 ? 'rgba(40,14,8,.25)' : 'rgba(255,210,180,.14)';
+        for (const o of [-W, 0, W]) x.fillRect(px+o, py, 2 + rnd()*5, 1.5 + rnd()*3); }
+      x.fillStyle = 'rgba(0,0,0,.12)'; for (const o of [-W, 0, W]) x.fillRect(bx+o, by+bh-3, bw, 3);
+    };
+    for (let r=0;r<NC;r++){
+      const y0 = r*CH, off = (r%2) * BL/2;
+      for (let i=-1;i<W/BL+1;i++) brick(i*BL + off + M/2, y0 + M/2, BL - M, CH - M);
+    }
+    // lattice: inside the band, the first and last course stay solid; the courses between form staggered openings
+    const holeW = 96, holeTop0 = (bandTop+1)*CH, holeRows = Math.floor((bandBot - bandTop - 2)/2);
+    for (let p=0;p<holeRows;p++){
+      const y0 = holeTop0 + p*2*CH + M/2 + 2, hh = 2*CH - M - 4, off = (p%2) * BL/2;
+      for (let i=-1;i<W/BL+1;i++){
+        const hx = i*BL + off + (BL - holeW)/2;
+        for (const o of [-W, 0, W]){
+          x.clearRect(hx+o, y0, holeW, hh);
+          x.fillStyle = 'rgba(30,12,6,.55)'; x.fillRect(hx+o-4, y0-4, holeW+8, 4); x.fillRect(hx+o-4, y0, 4, hh); // inner reveal shadow
+        }
+      }
+    }
+    const t = new THREE.CanvasTexture(c); t.wrapS = THREE.RepeatWrapping; t.wrapT = THREE.ClampToEdgeWrapping; t.anisotropy = 4; return t;
+  }
+  function concreteTexture(){
+    const S = 128, c = document.createElement('canvas'); c.width = c.height = S; const x = c.getContext('2d'), rnd = mkRnd(9);
+    x.fillStyle = '#d9d3c7'; x.fillRect(0,0,S,S);
+    for (let i=0;i<1500;i++){ const g = 170 + rnd()*70 | 0; x.fillStyle = `rgba(${g},${g-4},${g-12},.5)`; x.fillRect(rnd()*S, rnd()*S, 1.5, 1.5); }
+    const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t;
+  }
+  function detailTexture(){
+    const S = 256, c = document.createElement('canvas'); c.width = c.height = S; const x = c.getContext('2d'), rnd = mkRnd(77);
+    x.fillStyle = '#808080'; x.fillRect(0,0,S,S);
+    for (let i=0;i<5000;i++){ const g = 60 + rnd()*140 | 0; x.fillStyle = `rgb(${g},${g},${g})`; const px = rnd()*S, py = rnd()*S, r = .6 + rnd()*1.8;
+      for (const [ox,oy] of [[0,0],[S,0],[0,S],[S,S],[-S,0],[0,-S]]){ x.beginPath(); x.arc(px+ox, py+oy, r, 0, 7); x.fill(); } }
+    const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; return t;
+  }
+  const GS = Math.max(WW, WH) + 200, GX0 = (minX+maxX)/2 - GS/2, GY0 = (minY+maxY)/2 - GS/2;
+  function floorTexture(){
+    const S = 2048, k = S/GS, c = document.createElement('canvas'); c.width = c.height = S; const x = c.getContext('2d');
+    const rnd = mkRnd(11);
+    x.fillStyle = '#7da35a'; x.fillRect(0,0,S,S);
+    for (let i=0;i<50000;i++){ x.fillStyle = `rgba(${40+rnd()*60|0},${100+rnd()*70|0},${30+rnd()*30|0},.5)`; x.fillRect(rnd()*S, rnd()*S, 2, 2); }
+    x.setTransform(k,0,0,k,-GX0*k,-GY0*k);
+    // pale concrete walkway ring with radial joints
+    ellPath(x, RING); x.fillStyle = '#c9c2b2'; x.fill();
+    x.save(); ellPath(x, RING); x.clip(); x.strokeStyle = 'rgba(110,100,85,.35)'; x.lineWidth = 1.2;
+    for (let i=0;i<180;i++){ const a = i*Math.PI/90, p = ePt(a, 1), q = ePt(a, RING + .02); x.beginPath(); x.moveTo(p[0],p[1]); x.lineTo(q[0],q[1]); x.stroke(); }
+    x.restore();
+    // brown soil floor
+    ellPath(x, 1); x.fillStyle = '#8a6a4b'; x.fill();
+    x.save(); ellPath(x, 1); x.clip();
+    for (let i=0;i<9000;i++){ const p = [GX0 + rnd()*GS, GY0 + rnd()*GS]; x.fillStyle = rnd() < .5 ? 'rgba(60,40,24,.35)' : 'rgba(190,160,120,.3)'; x.fillRect(p[0], p[1], 1 + rnd()*2.5, 1 + rnd()*2.5); }
+    x.restore();
+    // cobbled plaza
+    x.save(); ellPath(x, RING); x.clip(); poly(x, D.plaza); x.closePath(); x.fillStyle = '#9b958a'; x.fill(); x.clip();
+    const pxs = D.plaza.map(p=>p[0]), pys = D.plaza.map(p=>p[1]);
+    for (let yy = Math.min(...pys); yy < Math.max(...pys); yy += 7) for (let xx = Math.min(...pxs) + (yy%14 ? 3.5 : 0); xx < Math.max(...pxs); xx += 7){
+      const g = 150 + rnd()*60 | 0; x.fillStyle = `rgb(${g},${g-6},${g-16})`; x.beginPath(); x.ellipse(xx + (rnd()-.5), yy + (rnd()-.5), 3, 2.7, rnd()*3, 0, 7); x.fill();
+    }
+    x.restore();
+    // damp, darker ground right along the wall foot
+    x.strokeStyle = 'rgba(45,30,18,.45)'; drawWalls(x, WALL_T + 10);
+    const t = new THREE.CanvasTexture(c); t.anisotropy = 8; return t;
+  }
+  function labelSprite(text){
+    const c = document.createElement('canvas'); c.width = 256; c.height = 300; const x = c.getContext('2d');
+    x.translate(128,110);
+    x.beginPath(); x.arc(0,0,80,0,7); x.fillStyle = '#efc22d'; x.fill(); x.lineWidth = 8; x.strokeStyle = '#333'; x.stroke();
+    x.font = '700 50px "PingFang TC","Noto Sans TC",sans-serif'; x.textAlign = 'center'; x.lineWidth = 8; x.strokeStyle = 'rgba(0,0,0,.6)'; x.strokeText(text, 0, 168); x.fillStyle = '#fff'; x.fillText(text, 0, 168);
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({map: new THREE.CanvasTexture(c), depthTest: true}));
+    sp.scale.set(30, 35, 1); return sp;
+  }
+  function build3D(){
+    const renderer = new THREE.WebGLRenderer({canvas: gl, antialias: true});
+    renderer.setPixelRatio(Math.min(dpr, 2));
+    const scene = new THREE.Scene();
+    const sky = new THREE.Color('#b9daf1');
+    scene.background = sky; scene.fog = new THREE.Fog(sky, 260, 1500);
+    const camera = new THREE.PerspectiveCamera(70, 1, 0.5, 6000);
+    scene.add(new THREE.HemisphereLight(0xeef6ff, 0x7a6448, 0.75));
+    const sun = new THREE.DirectionalLight(0xfff1d8, 0.75); sun.position.set(0.5, 1, 0.3); scene.add(sun);
+
+    // ground
+    const ft = floorTexture(), dt = detailTexture();
+    const groundMat = new THREE.MeshLambertMaterial({map: ft});
+    groundMat.onBeforeCompile = sh => {
+      sh.uniforms.detailMap = {value: dt};
+      sh.fragmentShader = 'uniform sampler2D detailMap;\n' + sh.fragmentShader.replace('#include <map_fragment>', '#include <map_fragment>\n diffuseColor.rgb *= 0.55 + 0.9*texture2D(detailMap, vUv*300.0).r;');
+    };
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(GS, GS), groundMat);
+    ground.rotation.x = -Math.PI/2; ground.position.set(GX0 + GS/2, 0, GY0 + GS/2); scene.add(ground);
+    const outer = new THREE.Mesh(new THREE.PlaneGeometry(14000, 14000), new THREE.MeshLambertMaterial({color: 0x739d50}));
+    outer.rotation.x = -Math.PI/2; outer.position.set(ECX, -0.3, ECY); scene.add(outer);
+
+    // walls: each polyline becomes a mitred strip (two brick faces) plus a concrete cap; one geometry, two materials
+    const groups = [0,1].map(() => ({pos:[], nor:[], uv:[], col:[], idx:[]}));
+    function quad(g, p, ns, u, c){ const G = groups[g], b = G.pos.length/3; p.forEach(v => G.pos.push(v[0],v[1],v[2])); ns.forEach(v => G.nor.push(v[0],v[1],v[2])); u.forEach(v => G.uv.push(v[0],v[1])); c.forEach(v => G.col.push(v[0],v[1],v[2])); G.idx.push(b,b+1,b+2,b,b+2,b+3); }
+    const wr = mkRnd(2024), posts = [];
+    const addPost = (x, z, a) => { if (!posts.some(p => Math.hypot(p[0]-x, p[1]-z) < 9)) posts.push([x, z, a]); };
+    for (const raw of D.walls){
+      const pts = [raw[0]]; for (const p of raw) if (Math.hypot(p[0]-pts[pts.length-1][0], p[1]-pts[pts.length-1][1]) > 0.8) pts.push(p);
+      if (pts.length < 2) continue;
+      const n = pts.length, sn = [];
+      for (let k=0;k<n-1;k++){ const dx = pts[k+1][0]-pts[k][0], dz = pts[k+1][1]-pts[k][1], L = Math.hypot(dx,dz); sn.push([-dz/L, dx/L]); }
+      const mit = pts.map((_, k) => {
+        const a = sn[k-1] || sn[k], b = sn[k] || sn[k-1], mx = a[0]+b[0], mz = a[1]+b[1], L = Math.hypot(mx,mz) || 1, m = [mx/L, mz/L];
+        const s = 1/Math.max(0.5, m[0]*b[0] + m[1]*b[1]); return [m, s];
+      });
+      const off = (k, w) => [pts[k][0] + mit[k][0][0]*mit[k][1]*w, pts[k][1] + mit[k][0][1]*mit[k][1]*w];
+      const tint = 0.9 + wr()*0.16;
+      const lo = [0.72*tint, 0.7*tint, 0.7*tint], hi = [tint, tint, tint];
+      const capLo = [0.82, 0.82, 0.82], capHi = [1, 1, 1];
+      let u = wr()*4, run = 0;
+      const ends = (k) => { const a = sn[Math.min(k, n-2)]; return Math.atan2(a[1], a[0]); };
+      addPost(pts[0][0], pts[0][1], ends(0)); addPost(pts[n-1][0], pts[n-1][1], ends(n-2));
+      for (let k=0;k<n-1;k++){
+        const len = Math.hypot(pts[k+1][0]-pts[k][0], pts[k+1][1]-pts[k][1]), u2 = u + len/BTEX_U;
+        for (const side of [1, -1]){
+          const A = off(k, side*WALL_T/2), B = off(k+1, side*WALL_T/2);
+          const na = [mit[k][0][0]*side, 0, mit[k][0][1]*side], nb = [mit[k+1][0][0]*side, 0, mit[k+1][0][1]*side];
+          quad(0, [[A[0],0,A[1]],[B[0],0,B[1]],[B[0],WALL_H,B[1]],[A[0],WALL_H,A[1]]], [na,nb,nb,na], [[u,0],[u2,0],[u2,1],[u,1]], [lo,lo,hi,hi]);
+          const Ac = off(k, side*CAP_W/2), Bc = off(k+1, side*CAP_W/2);
+          quad(1, [[Ac[0],WALL_H-0.5,Ac[1]],[Bc[0],WALL_H-0.5,Bc[1]],[Bc[0],WALL_H+CAP_H,Bc[1]],[Ac[0],WALL_H+CAP_H,Ac[1]]], [na,nb,nb,na], [[u,0],[u2,0],[u2,.1],[u,.1]], [capLo,capLo,capLo,capLo]);
+        }
+        const L1 = off(k, CAP_W/2), L2 = off(k+1, CAP_W/2), R1 = off(k, -CAP_W/2), R2 = off(k+1, -CAP_W/2), up = [0,1,0];
+        quad(1, [[R1[0],WALL_H+CAP_H,R1[1]],[R2[0],WALL_H+CAP_H,R2[1]],[L2[0],WALL_H+CAP_H,L2[1]],[L1[0],WALL_H+CAP_H,L1[1]]], [up,up,up,up], [[u,0],[u2,0],[u2,.4],[u,.4]], [capHi,capHi,capHi,capHi]);
+        // posts at sharp corners and every ~2.6 m along long runs
+        run += len;
+        if (k < n-2){
+          const a = sn[k], b = sn[k+1], turn = Math.acos(Math.max(-1, Math.min(1, a[0]*b[0] + a[1]*b[1])));
+          if (turn > 0.6 || run > 120){ addPost(pts[k+1][0], pts[k+1][1], Math.atan2(a[1]+b[1], a[0]+b[0])); run = 0; }
+        }
+        u = u2;
+      }
+    }
+    const geo = new THREE.BufferGeometry(), all = {pos:[], nor:[], uv:[], col:[], idx:[]};
+    groups.forEach((G, g) => {
+      const base = all.pos.length/3, start = all.idx.length;
+      all.pos = all.pos.concat(G.pos); all.nor = all.nor.concat(G.nor); all.uv = all.uv.concat(G.uv); all.col = all.col.concat(G.col);
+      for (let i=0;i<G.idx.length;i++) all.idx.push(G.idx[i] + base);
+      geo.addGroup(start, G.idx.length, g);
+    });
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(all.pos, 3));
+    geo.setAttribute('normal', new THREE.Float32BufferAttribute(all.nor, 3));
+    geo.setAttribute('uv', new THREE.Float32BufferAttribute(all.uv, 2));
+    geo.setAttribute('color', new THREE.Float32BufferAttribute(all.col, 3));
+    geo.setIndex(all.idx);
+    const ct = concreteTexture();
+    const brickMat = new THREE.MeshLambertMaterial({map: brickTexture(), vertexColors: true, side: THREE.DoubleSide, alphaTest: 0.5});
+    const capMat = new THREE.MeshLambertMaterial({map: ct, vertexColors: true, side: THREE.DoubleSide});
+    scene.add(new THREE.Mesh(geo, [brickMat, capMat]));
+
+    // square concrete posts (one instanced draw call)
+    const postGeo = new THREE.BoxGeometry(POST_W, POST_H, POST_W); postGeo.translate(0, POST_H/2, 0);
+    const postMesh = new THREE.InstancedMesh(postGeo, new THREE.MeshLambertMaterial({map: ct, color: 0xd9d3c8}), posts.length);
+    { const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), one = new THREE.Vector3(1,1,1), up = new THREE.Vector3(0,1,0);
+      posts.forEach(([x,z,a], i) => { q.setFromAxisAngle(up, -a); m4.compose(new THREE.Vector3(x, 0, z), q, one); postMesh.setMatrixAt(i, m4); }); }
+    scene.add(postMesh);
+
+    // goal sign floating above the central room
+    const sp = labelSprite('中心'); sp.position.set(GOAL[0], WALL_H + 34, GOAL[1]); scene.add(sp);
+
+    // trees and grass mounds outside the walkway ring
+    const rnd = mkRnd(5);
+    const trunkG = new THREE.CylinderGeometry(5, 7, 120, 7), crownG = new THREE.IcosahedronGeometry(70, 1), tuftG = new THREE.IcosahedronGeometry(16, 0);
+    const N = 46, trunks = new THREE.InstancedMesh(trunkG, new THREE.MeshLambertMaterial({color: 0x6b4e33}), N), crowns = new THREE.InstancedMesh(crownG, new THREE.MeshLambertMaterial({color: 0x3f7a39}), N);
+    const NT = 160, tufts = new THREE.InstancedMesh(tuftG, new THREE.MeshLambertMaterial({color: 0x5f8f3e}), NT);
+    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3();
+    for (let i=0;i<N;i++){
+      const a = rnd()*Math.PI*2, p = ePt(a, 1.45 + rnd()*0.9), s = 0.8 + rnd()*0.7;
+      sc.set(s,s,s); m4.compose(new THREE.Vector3(p[0], 60*s, p[1]), q, sc); trunks.setMatrixAt(i, m4);
+      sc.set(s, s*(0.8+rnd()*0.5), s); m4.compose(new THREE.Vector3(p[0], 165*s, p[1]), q, sc); crowns.setMatrixAt(i, m4);
+    }
+    for (let i=0;i<NT;i++){
+      const a = rnd()*Math.PI*2, p = ePt(a, 1.16 + rnd()*0.5), s = 0.6 + rnd()*1.2;
+      sc.set(s*1.4, s*0.55, s*1.4); m4.compose(new THREE.Vector3(p[0], 2, p[1]), q, sc); tufts.setMatrixAt(i, m4);
+    }
+    scene.add(trunks, crowns, tufts);
+
+    // solution: a faint red ribbon on the ground
+    const sp2 = [], si = [];
+    for (let k=0;k<SOL.length;k++){
+      const a = SOL[Math.max(0,k-1)], b = SOL[Math.min(SOL.length-1,k+1)], dx = b[0]-a[0], dz = b[1]-a[1], L = Math.hypot(dx,dz) || 1, nx = -dz/L*2.5, nz = dx/L*2.5;
+      sp2.push(SOL[k][0]+nx, 0.7, SOL[k][1]+nz, SOL[k][0]-nx, 0.7, SOL[k][1]-nz);
+      if (k) { const b0 = (k-1)*2; si.push(b0, b0+1, b0+2, b0+1, b0+3, b0+2); }
+    }
+    const solGeo = new THREE.BufferGeometry(); solGeo.setAttribute('position', new THREE.Float32BufferAttribute(sp2, 3)); solGeo.setIndex(si);
+    const sol = new THREE.Mesh(solGeo, new THREE.MeshBasicMaterial({color: 0xd2502f, transparent: true, opacity: 0.55, depthWrite: false, side: THREE.DoubleSide}));
+    sol.visible = showAns; scene.add(sol);
+
+    // trail on the ground
+    const trailGeo = new THREE.BufferGeometry(); trailGeo.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(3*20000), 3));
+    const trail = new THREE.Line(trailGeo, new THREE.LineBasicMaterial({color: 0xff5a36})); trail.frustumCulled = false; scene.add(trail);
+
+    three = {renderer, scene, camera, sol, trail, trailGeo};
+  }
+  function draw3D(){
+    if (!three) return;
+    const {renderer, scene, camera, trailGeo} = three;
+    camera.position.set(st.x, EYE, st.y);
+    camera.lookAt(st.x + Math.cos(st.h)*40, EYE - 5, st.y + Math.sin(st.h)*40);
+    const n = Math.min(st.trail.length, 20000), arr = trailGeo.attributes.position.array;
+    for (let i=0;i<n;i++){ arr[i*3] = st.trail[i][0]; arr[i*3+1] = 0.5; arr[i*3+2] = st.trail[i][1]; }
+    trailGeo.setDrawRange(0, n); trailGeo.attributes.position.needsUpdate = true;
+    renderer.render(scene, camera);
+    if (showMini){
+      const W = mini.width/dpr, H = mini.height/dpr, s = W/WW;
+      drawMap(mctx, W, H, {s, ox:-minX*s, oy:-minY*s}, {dpr, mini:true});
+    }
+  }
+  // joystick overlay for 3D drawn on a 2D layer above the GL canvas
+  const joy = document.createElement('canvas'); joy.style.cssText = 'position:absolute;left:0;top:0;pointer-events:none;width:100%'; $('board').appendChild(joy); const jctx = joy.getContext('2d');
+
+  // ---------- loop ----------
+  let lastT = null;
+  function frame(ts){
+    const dt = lastT == null ? 0 : Math.min(0.05, (ts - lastT)/1000); lastT = ts;
+    if (!st.done){
+      if (update(dt)){ if (st.t0 == null){ st.t0 = 0; $('hint').hidden = true; } checkGoal(); }
+      if (st.t0 != null) st.t += dt;
+      hud();
+    }
+    if (view === '3d'){
+      draw3D();
+      joy.hidden = false; joy.width = Math.round(cw*dpr); joy.height = Math.round(chh*dpr); joy.style.height = chh + 'px';
+      jctx.setTransform(dpr,0,0,dpr,0,0); jctx.clearRect(0,0,cw,chh); drawJoy(jctx);
+    } else { joy.hidden = true; draw2D(); }
+    requestAnimationFrame(frame);
+  }
+  reset();
+  setView(matchMedia('(max-width: 700px)').matches ? 'near' : 'all');
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
